@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Tidsro.Models;
@@ -54,5 +55,25 @@ public class SoundResourceTests
         var name = SoundService.ResourceNameFor(choice);
         Assert.NotNull(name);
         Assert.EndsWith("." + expectedFile, name!);
+    }
+
+    // The custom sound is a file the user chose, not something shipped in the binary.
+    [Fact]
+    public void The_custom_choice_has_no_embedded_resource()
+        => Assert.Null(SoundService.ResourceNameFor(SoundChoice.Custom));
+
+    // A removed or never-chosen .wav must be silence, not a crash mid-alarm.
+    [Fact]
+    public void Playing_the_custom_choice_with_no_file_chosen_is_silent_and_does_not_throw()
+    {
+        var svc = new SoundService(() => null);
+        svc.Play(SoundChoice.Custom);
+    }
+
+    [Fact]
+    public void Playing_the_custom_choice_with_a_missing_file_does_not_throw()
+    {
+        var svc = new SoundService(() => Path.Combine(Path.GetTempPath(), "TidsroTests", "gone.wav"));
+        svc.Play(SoundChoice.Custom);
     }
 }

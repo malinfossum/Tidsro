@@ -6,6 +6,11 @@ public sealed class AppSettings
     public bool LaunchAtStartup { get; set; }
     public SoundChoice DefaultSound { get; set; } = SoundChoice.None;
 
+    /// <summary>The name of the .wav behind <see cref="SoundChoice.Custom"/>, shown in Settings so the
+    /// user can see which file they chose. A label and nothing else — the audio always lives at the one
+    /// path <c>CustomSoundStore</c> owns, so this string never reaches the file system.</summary>
+    public string? CustomSoundName { get; set; }
+
     /// <summary>Index of the tab the main window opens on. 0 = Quick timers, 1 = Schedule, 2 = Week.</summary>
     public int SelectedTab { get; set; }
 
@@ -26,10 +31,20 @@ public sealed class AppSettings
         SchemaVersion = 1,
         LaunchAtStartup = LaunchAtStartup,
         DefaultSound = Enum.IsDefined(DefaultSound) ? DefaultSound : SoundChoice.None,
+        CustomSoundName = NormaliseName(CustomSoundName),
         SelectedTab = SelectedTab >= 0 && SelectedTab < TabCount ? SelectedTab : 0,
         WindowLeft = WindowLeft is double l && double.IsFinite(l) ? l : null,
         WindowTop = WindowTop is double t && double.IsFinite(t) ? t : null,
         WindowWidth = WindowWidth is double w && double.IsFinite(w) && w >= 380 ? w : null,
         WindowHeight = WindowHeight is double h && double.IsFinite(h) && h >= 480 ? h : null,
     };
+
+    private const int MaxName = 200;
+
+    private static string? NormaliseName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        var trimmed = name.Trim();
+        return trimmed.Length > MaxName ? trimmed[..MaxName] : trimmed;
+    }
 }
