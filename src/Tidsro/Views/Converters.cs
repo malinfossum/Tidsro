@@ -39,6 +39,9 @@ public sealed class SoundChoiceToLabelConverter : IValueConverter
         SoundChoice.PianoJingle => "Piano jingle",
         SoundChoice.ElectricPianoJingle => "Electric piano jingle",
         SoundChoice.BellJingle => "Bell jingle",
+        // Flat wording: these rows sit in a three-column grid where a file name long enough to be
+        // recognisable would push the preview button off the end. Settings names the file.
+        SoundChoice.Custom => "My sound",
         _ => "",
     };
     public object ConvertBack(object? v, Type t, object? p, CultureInfo c) => throw new NotSupportedException();

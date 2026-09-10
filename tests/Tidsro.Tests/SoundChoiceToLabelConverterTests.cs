@@ -14,6 +14,9 @@ public class SoundChoiceToLabelConverterTests
     [InlineData(SoundChoice.PianoJingle, "Piano jingle")]
     [InlineData(SoundChoice.ElectricPianoJingle, "Electric piano jingle")]
     [InlineData(SoundChoice.BellJingle, "Bell jingle")]
+    // Flat wording on purpose: the picker rows sit in a three-column grid where a file name long
+    // enough to be recognisable would push the preview button off the end. Settings names the file.
+    [InlineData(SoundChoice.Custom, "My sound")]
     public void Converts_each_choice_to_a_friendly_label(SoundChoice choice, string expected)
     {
         var converter = new SoundChoiceToLabelConverter();

@@ -17,6 +17,33 @@
         </DataTemplate>
       </ComboBox.ItemTemplate>
     </ComboBox>
+    <!-- Sits under the picker it feeds: "My sound" only appears in the dropdowns once a file is
+         chosen here. Choosing copies the file at once, so this is outside the Save/Cancel draft. -->
+    <TextBlock Text="My sound" Margin="0,20,0,4" Foreground="{StaticResource TextMuted}"
+               FontWeight="SemiBold"/>
+    <TextBlock Text="Use your own .wav for timers and alarms. Applies immediately; Cancel will not undo it."
+               TextWrapping="Wrap" Foreground="{StaticResource TextFaint}"
+               FontSize="{StaticResource TextXs}" Margin="0,0,0,8"/>
+    <!-- No AutomationProperties.Name: it would REPLACE the accessible name a TextBlock gets from its
+         own Text, so a screen reader would announce the label and never the file that was chosen. -->
+    <TextBlock Text="{Binding CustomSoundLabel}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+    <StackPanel Orientation="Horizontal">
+      <Button Content="Choose .wav…" Style="{StaticResource QuietAction}" MinWidth="120"
+              Command="{Binding ChooseCustomSoundCommand}"
+              AutomationProperties.Name="Choose a custom sound"/>
+      <!-- Hidden, not merely disabled, until there is a sound to act on: QuietAction has no dimmed
+           state, so a disabled button here reads as clickable and does nothing. -->
+      <Button Content="&#xE768;" Width="40" Margin="8,0,0,0" Style="{StaticResource QuietAction}"
+              FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+              Command="{Binding PreviewCustomSoundCommand}"
+              Visibility="{Binding HasCustomSound, Converter={StaticResource BoolToVisible}}"
+              ToolTip="Preview sound" AutomationProperties.Name="Preview custom sound"/>
+      <Button Content="Remove" Style="{StaticResource QuietAction}" MinWidth="84" Margin="8,0,0,0"
+              Command="{Binding RemoveCustomSoundCommand}"
+              Visibility="{Binding HasCustomSound, Converter={StaticResource BoolToVisible}}"
+              AutomationProperties.Name="Remove the custom sound"/>
+    </StackPanel>
+
     <Separator Margin="0,24,0,0" Background="{StaticResource TextMuted}" Opacity="0.3"/>
     <TextBlock Text="Data" Margin="0,16,0,4" Foreground="{StaticResource TextMuted}"
                FontWeight="SemiBold"/>

@@ -22,6 +22,17 @@ public sealed record DataPorts(
     Action<string, string> ShowMessage,
     Func<DateTime> Today);
 
+/// <summary>What the custom-sound row needs. Bundled for the same reason <see cref="DataPorts"/> is:
+/// this constructor is already long enough without four more positional callbacks.</summary>
+/// <param name="Changed">Called after the slot changes, so the pickers elsewhere in the app re-read
+/// their lists — a sound added here has to appear in the timer and alarm pickers at once.</param>
+public sealed record SoundPorts(
+    CustomSoundStore Store,
+    IFileDialogService Dialogs,
+    ISoundService Sound,
+    Action<string, string> ShowMessage,
+    Action Changed);
+
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly IStartupService _startup;      // interface came from Task 2
@@ -34,24 +45,23 @@ public partial class SettingsViewModel : ObservableObject
     private readonly Action _resetWindowPlacement;
     private readonly Func<string, string, bool> _confirm;   // (title, message) -> confirmed
     private readonly DataPorts? _data;   // null only in older view-model tests; App always supplies it
+    private readonly SoundPorts? _sounds; // null only in older view-model tests; App always supplies it
 
     [ObservableProperty] private bool _launchAtStartup;
     [ObservableProperty] private SoundChoice _defaultSound;
 
-    public SoundChoice[] SoundOptions { get; } =
-        { SoundChoice.None, SoundChoice.SoftChime, SoundChoice.Marimba, SoundChoice.Bell,
-          SoundChoice.PianoJingle, SoundChoice.ElectricPianoJingle, SoundChoice.BellJingle };
+    public SoundChoice[] SoundOptions => SoundOptionList.For(HasCustomSound, DefaultSound);
 
     public SettingsViewModel(AppSettings settings, IStartupService startup,
         Action save, Action<SoundChoice> onDefaultSoundChanged,
         Action clearAllAlarms, Func<int> alarmCount, Func<bool> hasAnythingToClear,
         Action resetWindowPlacement, Func<string, string, bool> confirm,
-        DataPorts? dataPorts = null)
+        DataPorts? dataPorts = null, SoundPorts? soundPorts = null)
     {
         _settings = settings;
         _startup = startup; _save = save; _onDefaultSoundChanged = onDefaultSoundChanged;
         _clearAllAlarms = clearAllAlarms; _alarmCount = alarmCount; _hasAnythingToClear = hasAnythingToClear;
-        _resetWindowPlacement = resetWindowPlacement; _confirm = confirm; _data = dataPorts;
+        _resetWindowPlacement = resetWindowPlacement; _confirm = confirm; _data = dataPorts; _sounds = soundPorts;
         _launchAtStartup = settings.LaunchAtStartup;
         _defaultSound = settings.DefaultSound;
     }
@@ -72,6 +82,69 @@ public partial class SettingsViewModel : ObservableObject
         _settings.LaunchAtStartup = LaunchAtStartup;
         _settings.DefaultSound = DefaultSound;
         _save();   // App's SaveData handles IO errors; settings remain non-critical
+    }
+
+    // --- The custom sound -----------------------------------------------------------------------
+    // Choosing and clearing act at once, like export/import below: they copy or delete a real file, so
+    // there is nothing sensible for Cancel to undo. Picking Custom in a dropdown is still part of the
+    // draft — that is only which sound an alarm uses.
+
+    public bool HasCustomSound => _sounds?.Store.HasCustom ?? false;
+
+    /// <summary>The chosen file's name, or a plain note that there is nothing chosen. The file on disk
+    /// is the truth: a name carried in from a backup taken on another machine has no audio behind it.</summary>
+    public string CustomSoundLabel => HasCustomSound
+        ? (_settings.CustomSoundName ?? "My sound")
+        : "No sound chosen";
+
+    [RelayCommand]
+    private void ChooseCustomSound()
+    {
+        if (_sounds is null) return;
+
+        var source = _sounds.Dialogs.AskWavPath();
+        if (source is null) return;                  // cancelled — nothing happens
+
+        var name = _sounds.Store.Install(source);
+        if (name is null)
+        {
+            // Never silent: otherwise the file looks accepted and every alarm using it goes quiet.
+            _sounds.ShowMessage("That file won't do",
+                "Tidsro couldn't use that file. It needs a .wav under 5 MB that Windows can play — "
+                + "an .mp3 renamed to .wav won't work. Try converting it to WAV first.");
+            return;
+        }
+
+        _settings.CustomSoundName = name;
+        CustomSoundChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(HasCustomSound))]
+    private void PreviewCustomSound() => _sounds?.Sound.Play(SoundChoice.Custom);
+
+    [RelayCommand(CanExecute = nameof(HasCustomSound))]
+    private void RemoveCustomSound()
+    {
+        if (_sounds is null) return;
+
+        _sounds.Store.Remove();
+        _settings.CustomSoundName = null;
+
+        // The dropdown is about to lose the entry it is sitting on; leaving it there would render blank.
+        if (DefaultSound == SoundChoice.Custom) DefaultSound = SoundChoice.None;
+
+        CustomSoundChanged();
+    }
+
+    private void CustomSoundChanged()
+    {
+        OnPropertyChanged(nameof(HasCustomSound));
+        OnPropertyChanged(nameof(CustomSoundLabel));
+        OnPropertyChanged(nameof(SoundOptions));
+        PreviewCustomSoundCommand.NotifyCanExecuteChanged();
+        RemoveCustomSoundCommand.NotifyCanExecuteChanged();
+        _save();                       // the name is settings; persist it with the rest
+        _sounds!.Changed();            // and let the pickers elsewhere re-read their lists
     }
 
     // All four of these act at once and are outside the Save/Cancel draft — Cancel does not undo them,

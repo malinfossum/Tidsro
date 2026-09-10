@@ -6,4 +6,7 @@ public interface IFileDialogService
 {
     string? AskSavePath(string suggestedFileName);
     string? AskOpenPath();
+
+    /// <summary>Pick a .wav to use as the custom alarm sound.</summary>
+    string? AskWavPath();
 }
