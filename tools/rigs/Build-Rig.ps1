@@ -4,9 +4,9 @@
 
 .DESCRIPTION
     Copies src/Tidsro to a scratch folder and patches two things in the copy only: the
-    single-instance mutex name, so it starts beside an installed Tidsro, and the data path, so it
-    reads and writes its own data.json instead of %AppData%\Tidsro. Each replacement is asserted -
-    a silent miss would point the copy at my real file.
+    single-instance mutex name, so it starts beside an installed Tidsro, and every %AppData%\Tidsro
+    path - data.json, the log, and the custom-sound folder - so the copy reads and writes its own.
+    Each replacement is asserted - a silent miss would point the copy at my real file.
 
     Nothing here writes to HKCU\...\Run either, as long as the fixture keeps LaunchAtStartup false.
 
@@ -64,11 +64,17 @@ if ($Ref -eq 'WORKTREE') {
 if (-not (Test-Path (Join-Path $src 'Tidsro.csproj'))) { throw "no csproj under $src" }
 
 Edit-File (Join-Path $src 'App.xaml.cs') '"Tidsro.SingleInstance.v1"' "`"$Mutex`""
-foreach ($file in 'Services\PersistenceService.cs', 'Services\LogService.cs') {
-    $name = if ($file -match 'Log') { 'tidsro.log' } else { 'data.json' }
-    Edit-File (Join-Path $src $file) `
-        "Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), `"Tidsro`", `"$name`");" `
-        "@`"$dataRoot`", `"Tidsro`", `"$name`");"
+# Every path that reaches into %AppData%\Tidsro. A new one added to the app and not added here
+# would have the rig writing into my real folder while still claiming it cannot.
+$appDataPaths = @(
+    @{ File = 'Services\PersistenceService.cs'; Leaf = 'data.json' }
+    @{ File = 'Services\LogService.cs';         Leaf = 'tidsro.log' }
+    @{ File = 'Services\CustomSoundStore.cs';   Leaf = 'sounds' }
+)
+foreach ($p in $appDataPaths) {
+    Edit-File (Join-Path $src $p.File) `
+        "Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), `"Tidsro`", `"$($p.Leaf)`");" `
+        "@`"$dataRoot`", `"Tidsro`", `"$($p.Leaf)`");"
 }
 
 dotnet build (Join-Path $src 'Tidsro.csproj') -c Release --nologo -v quiet | Out-Null
