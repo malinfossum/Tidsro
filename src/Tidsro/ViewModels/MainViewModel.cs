@@ -15,9 +15,26 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<TimerItemViewModel> Running { get; } = new();
     public int[] Presets { get; } = { 15, 30, 60 };
 
-    public SoundChoice[] SoundOptions { get; } =
-        { SoundChoice.None, SoundChoice.SoftChime, SoundChoice.Marimba, SoundChoice.Bell,
-          SoundChoice.PianoJingle, SoundChoice.ElectricPianoJingle, SoundChoice.BellJingle };
+    // Whether a custom .wav is installed right now. A live read, not a snapshot: Settings can add or
+    // clear one while this view-model lives, and the pickers have to follow.
+    private readonly Func<bool> _hasCustomSound;
+
+    /// <summary>Sounds offered by the timer picker.</summary>
+    public SoundChoice[] SoundOptions => SoundOptionList.For(_hasCustomSound(), SelectedSound);
+
+    /// <summary>Sounds offered by the Schedule tab's alarm picker. Separate from the timer picker's
+    /// list only because each keeps its own current choice in view — see SoundOptionList.</summary>
+    public SoundChoice[] AlarmSoundOptions => SoundOptionList.For(_hasCustomSound(), AlarmSound);
+
+    /// <summary>Sounds to offer a row being edited, keeping that row's own choice in the list.</summary>
+    public SoundChoice[] SoundOptionsFor(SoundChoice current) => SoundOptionList.For(_hasCustomSound(), current);
+
+    /// <summary>Settings added or cleared the custom sound: re-read every picker's list.</summary>
+    public void RefreshSoundOptions()
+    {
+        OnPropertyChanged(nameof(SoundOptions));
+        OnPropertyChanged(nameof(AlarmSoundOptions));
+    }
 
     [ObservableProperty] private string _customInput = "";
     [ObservableProperty] private string _label = "";
@@ -149,10 +166,15 @@ public partial class MainViewModel : ObservableObject
     /// note has no armed alarm behind it, so alarmCount alone would miss it).</summary>
     public bool HasAnythingToClear => _scheduler.Alarms.Count + _scheduler.Running.Count > 0 || MissedNote is not null;
 
-    public MainViewModel(SchedulerService scheduler, ISoundService sound, SoundChoice defaultSound)
+    /// <param name="hasCustomSound">Whether a user-supplied .wav is installed. Required rather than
+    /// optional on purpose: a trailing optional parameter on an arm method is what quietly lost every
+    /// imported end time in v2.5.0, so the compiler names each call site instead.</param>
+    public MainViewModel(SchedulerService scheduler, ISoundService sound, SoundChoice defaultSound,
+        Func<bool> hasCustomSound)
     {
         _scheduler = scheduler;
         _sound = sound;
+        _hasCustomSound = hasCustomSound;
         _selectedSound = defaultSound;   // seed the picker from the global default; per-timer override lives here after
         _alarmSound = defaultSound;   // the alarm sound picker starts at the global default too
         // No AlarmsChanged hook for the week. That event means "the alarm set is now worth writing to

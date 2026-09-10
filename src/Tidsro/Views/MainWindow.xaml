@@ -534,7 +534,7 @@
             <Grid Margin="0,12,0,0">
               <Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/><ColumnDefinition Width="48"/></Grid.ColumnDefinitions>
               <TextBlock Grid.Column="0" Text="Sound" VerticalAlignment="Center" Foreground="{StaticResource TextMuted}"/>
-              <ComboBox Grid.Column="1" ItemsSource="{Binding SoundOptions}" SelectedItem="{Binding AlarmSound}" AutomationProperties.Name="Alarm sound">
+              <ComboBox Grid.Column="1" ItemsSource="{Binding AlarmSoundOptions}" SelectedItem="{Binding AlarmSound}" AutomationProperties.Name="Alarm sound">
                 <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SoundLabel}}"/></DataTemplate></ComboBox.ItemTemplate>
               </ComboBox>
               <Button Grid.Column="2" Width="40" HorizontalAlignment="Right" Content="&#xE768;" Command="{Binding PreviewAlarmSoundCommand}"

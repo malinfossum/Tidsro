@@ -208,4 +208,37 @@ public class TidsroDataTests
         var settings = new AppSettings { SelectedTab = 3 }.Sanitized();
         Assert.Equal(0, settings.SelectedTab);
     }
+
+    // --- The custom sound's display name ---------------------------------------------------------
+    // It is a label and nothing else: the audio always lives at the one path CustomSoundStore owns,
+    // so a name out of an imported backup can never steer a file read. Sanitising it is the same
+    // trimming an alarm label gets.
+
+    [Fact]
+    public void The_custom_sound_name_survives_sanitising()
+    {
+        var settings = new AppSettings { CustomSoundName = "gong.wav" }.Sanitized();
+        Assert.Equal("gong.wav", settings.CustomSoundName);
+    }
+
+    [Fact]
+    public void A_blank_custom_sound_name_becomes_null()
+    {
+        Assert.Null(new AppSettings { CustomSoundName = "   " }.Sanitized().CustomSoundName);
+        Assert.Null(new AppSettings { CustomSoundName = null }.Sanitized().CustomSoundName);
+    }
+
+    [Fact]
+    public void A_custom_sound_name_is_trimmed_and_capped()
+    {
+        var settings = new AppSettings { CustomSoundName = "  " + new string('n', 300) + "  " }.Sanitized();
+        Assert.Equal(200, settings.CustomSoundName!.Length);
+    }
+
+    [Fact]
+    public void The_custom_choice_survives_sanitising_as_the_default_sound()
+    {
+        var settings = new AppSettings { DefaultSound = SoundChoice.Custom }.Sanitized();
+        Assert.Equal(SoundChoice.Custom, settings.DefaultSound);
+    }
 }

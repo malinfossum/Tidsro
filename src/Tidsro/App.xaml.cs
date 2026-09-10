@@ -22,6 +22,7 @@ public partial class App : Application
     private TaskbarIcon? _tray;
     private SchedulerService _scheduler = null!;
     private SoundService _sound = null!;
+    private CustomSoundStore _customSounds = null!;
     private PersistenceService _persistence = null!;
     private LogService _log = null!;
     private TidsroData _data = null!;
@@ -139,8 +140,9 @@ public partial class App : Application
         _data = _persistence.Load();
         _settings = _data.Settings ?? AppSettings.Defaults();
         _scheduler = new SchedulerService(new SystemClock());
-        _sound = new SoundService();
-        _mainVm = new MainViewModel(_scheduler, _sound, _settings.DefaultSound);
+        _customSounds = new CustomSoundStore(CustomSoundStore.DefaultFolder);
+        _sound = new SoundService(() => _customSounds.FilePath);
+        _mainVm = new MainViewModel(_scheduler, _sound, _settings.DefaultSound, () => _customSounds.HasCustom);
         ArmLoadedAlarms(_data.Alarms);
         ArmLoadedRecurring(_data.RecurringAlarms);
         _mainVm.AlarmsChanged += (_, _) => SaveData();
@@ -263,7 +265,7 @@ public partial class App : Application
             new EditAlarmViewModel(row.Item.Id, row.Item.EndsAt?.ToString("HH\\:mm") ?? "",
                 row.Item.EndMinute is { } e ? $"{e / 60:D2}:{e % 60:D2}" : "",
                 row.Item.Label ?? "", row.Item.Sound, row.Item.RecurringDays ?? Weekdays.None, row.Item.WarnBefore,
-                _mainVm.SoundOptions, _mainVm.ApplyAlarmEdit, _sound));
+                _mainVm.SoundOptionsFor(row.Item.Sound), _mainVm.ApplyAlarmEdit, _sound));
         _main ??= new MainWindow(_mainVm, () => new SettingsWindow(confirm =>
                 new SettingsViewModel(_settings, new StartupService(StartupService.CurrentExePath),
                     SaveData, _mainVm.SetDefaultSound,
@@ -274,7 +276,8 @@ public partial class App : Application
                     // would leave the reset invisible until the next launch.
                     resetWindowPlacement: () => { _main?.ResetPlacement(); _mainVm.SelectedTabIndex = 0; },
                     confirm: confirm,
-                    dataPorts: BuildDataPorts())),
+                    dataPorts: BuildDataPorts(),
+                    soundPorts: BuildSoundPorts())),
             editFactory, _settings, SaveData);
         Application.Current.MainWindow = _main;
         _main.Show();
@@ -311,6 +314,13 @@ public partial class App : Application
         catch (Exception ex) { _log.Log(ex, "ShowFailureDialog"); }
         finally { _alerts.ReleaseDialog(); }
     }
+
+    private SoundPorts BuildSoundPorts() => new(
+        Store: _customSounds,
+        Dialogs: new FileDialogService(),
+        Sound: _sound,
+        ShowMessage: (title, message) => ChoiceDialog.ShowMessage(DialogOwner, title, message),
+        Changed: () => _mainVm.RefreshSoundOptions());
 
     private DataPorts BuildDataPorts() => new(
         Dialogs: new FileDialogService(),

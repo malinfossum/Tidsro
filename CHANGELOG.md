@@ -2,6 +2,18 @@
 
 All notable changes to Tidsro are documented here. Dates are ISO 8601.
 
+## [2.6.0] — 2026-09-10
+
+### Added
+- **Your own sound** — Settings has a **My sound** section where **Choose .wav…** picks any .wav on
+  the machine, and it then appears as **My sound** in every sound dropdown, beside the six built-in
+  chimes. Tidsro copies the file into its own folder rather than remembering where it came from, so
+  moving, renaming or deleting the original — or picking it off a memory stick — cannot leave an
+  alarm silent. One sound at a time: choosing another replaces it, **Remove** clears it, and **▶**
+  plays it back. A file it cannot use says so instead of being accepted and staying quiet; MP3 is
+  not supported, including an `.mp3` renamed to `.wav`. A backup carries the sound's name but not
+  the audio, so a schedule restored on another machine asks for the file again.
+
 ## [2.5.1] — 2026-09-04
 
 ### Fixed
@@ -156,6 +168,7 @@ Clock-time alarms — a "Your day" agenda with one-shot fire-at-HH:MM alarms, op
 ## [1.0.0] — 2026-06-16
 First release — countdown timers with presets or custom durations, pause/resume, reset, and per-timer sounds.
 
+[2.6.0]: https://github.com/malinfossum/tidsro/releases/tag/v2.6.0
 [2.5.1]: https://github.com/malinfossum/tidsro/releases/tag/v2.5.1
 [2.5.0]: https://github.com/malinfossum/tidsro/releases/tag/v2.5.0
 [2.4.2]: https://github.com/malinfossum/tidsro/releases/tag/v2.4.2

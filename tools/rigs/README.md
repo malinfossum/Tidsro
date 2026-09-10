@@ -13,7 +13,7 @@ the rendering.
 
 | Script | What it does |
 |---|---|
-| `Build-Rig.ps1` | Copies `src/Tidsro` to a scratch folder, patches the mutex and data path, builds Release. `-Ref` builds any tag, so an old version can be run against a new file. |
+| `Build-Rig.ps1` | Copies `src/Tidsro` to a scratch folder, patches the mutex and every `%AppData%\Tidsro` path (data, log, custom sounds), builds Release. `-Ref` builds any tag, so an old version can be run against a new file. |
 | `Seed-Fixture.ps1` | Writes a fictional week (two blocks, two instants, one one-shot), starts the rig, optionally screenshots it, and returns the process. |
 | `Click-Button.ps1` | Clicks buttons by accessible name through UI Automation. |
 | `Front-Dialog.ps1` | Brings the rig's Win32 file dialog to the front. |

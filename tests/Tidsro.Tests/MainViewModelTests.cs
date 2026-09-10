@@ -16,7 +16,7 @@ public class MainViewModelTests
         clock = new FakeClock();
         sched = new SchedulerService(clock);
         sound = new FakeSoundService();
-        return new MainViewModel(sched, sound, defaultSound);
+        return new MainViewModel(sched, sound, defaultSound, hasCustomSound: () => false);
     }
 
     [Fact]
@@ -1542,7 +1542,7 @@ public class MainViewModelTests
     {
         var clock = new FakeClock { Now = new DateTimeOffset(2026, 1, 1, 8, 0, 0, TimeSpan.Zero) };
         var scheduler = new SchedulerService(clock);
-        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None);
+        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None, () => false);
 
         Assert.True(vm.Timetable.Week.IsEmpty);
 
@@ -1557,7 +1557,7 @@ public class MainViewModelTests
     {
         var clock = new FakeClock { Now = new DateTimeOffset(2026, 1, 1, 8, 0, 0, TimeSpan.Zero) };
         var scheduler = new SchedulerService(clock);
-        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None);
+        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None, () => false);
         scheduler.ArmRecurringAlarm(9, 0, Weekdays.Mon, "Class", SoundChoice.None);
         vm.RefreshAll();
         Assert.False(vm.Timetable.Week.IsEmpty);
@@ -1572,7 +1572,7 @@ public class MainViewModelTests
     {
         var clock = new FakeClock { Now = new DateTimeOffset(2026, 1, 1, 8, 0, 0, TimeSpan.Zero) };
         var scheduler = new SchedulerService(clock);
-        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None);
+        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None, () => false);
 
         vm.ReplaceAllAlarms(
             Array.Empty<AlarmRecord>(),
@@ -1598,7 +1598,7 @@ public class MainViewModelTests
     {
         var clock = new FakeClock { Now = new DateTimeOffset(2026, 1, 1, 8, 0, 0, TimeSpan.Zero) };
         var scheduler = new SchedulerService(clock);
-        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None);
+        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None, () => false);
         vm.AlarmTimeInput = "14:30";
         vm.AlarmRepeat = RepeatOption.Daily;
         vm.AddAlarmCommand.Execute(null);
@@ -1616,7 +1616,7 @@ public class MainViewModelTests
     {
         var clock = new FakeClock { Now = new DateTimeOffset(2026, 1, 1, 8, 0, 0, TimeSpan.Zero) };
         var scheduler = new SchedulerService(clock);
-        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None);
+        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None, () => false);
         vm.AlarmTimeInput = "14:30";
         vm.AlarmRepeat = RepeatOption.Daily;
         vm.AddAlarmCommand.Execute(null);
@@ -1637,7 +1637,7 @@ public class MainViewModelTests
     {
         var clock = new FakeClock { Now = new DateTimeOffset(2026, 1, 1, 8, 0, 0, TimeSpan.Zero) };
         var scheduler = new SchedulerService(clock);
-        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None);
+        var vm = new MainViewModel(scheduler, new FakeSoundService(), SoundChoice.None, () => false);
         vm.AlarmTimeInput = "14:30";
         vm.AlarmRepeat = RepeatOption.Daily;
         vm.AddAlarmCommand.Execute(null);
@@ -1656,7 +1656,7 @@ public class MainViewModelTests
     public void Ctrl_tab_cycles_through_three_tabs()
     {
         var clock = new FakeClock { Now = new DateTimeOffset(2026, 1, 1, 8, 0, 0, TimeSpan.Zero) };
-        var vm = new MainViewModel(new SchedulerService(clock), new FakeSoundService(), SoundChoice.None);
+        var vm = new MainViewModel(new SchedulerService(clock), new FakeSoundService(), SoundChoice.None, () => false);
 
         Assert.Equal(0, vm.SelectedTabIndex);
         vm.AdvanceTabCommand.Execute(null);
